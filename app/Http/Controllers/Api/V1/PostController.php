@@ -3,6 +3,10 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\StorePostRequest;
+use App\Http\Requests\Api\V1\UpdatePostRequest;
+use App\Http\Resources\Api\V1\PostResource;
+use App\Models\Post;
 use Illuminate\Http\Request;
 
 class PostController extends Controller
@@ -12,40 +16,46 @@ class PostController extends Controller
      */
     public function index()
     {
-        return response()->json([
-            'data' => []
-        ]);
+        return PostResource::collection(Post::all());
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StorePostRequest $request)
     {
-        //
+        $post = Post::query()->create($request->validated());
+
+        return new PostResource($post)
+            ->response()
+            ->setStatusCode(201);
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Post $post)
     {
-        //
+        return new PostResource($post);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(UpdatePostRequest $request, Post $post)
     {
-        //
+        $post->update($request->validated());
+
+        return new PostResource($post);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Post $post)
     {
-        //
+        $post->delete();
+
+        return response()->noContent();
     }
 }
