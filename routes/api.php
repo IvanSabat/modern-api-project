@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Api\V1\PostController;
+use App\Http\Controllers\Api\V2\PostController as V2PostController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -8,10 +8,14 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-Route::prefix('v1')->group(function () {
-    Route::get('/posts', [PostController::class, 'index']);
-    Route::get('/posts/{post}', [PostController::class, 'show']);
-    Route::post('/posts', [PostController::class, 'store']);
-    Route::patch('/posts/{post}', [PostController::class, 'update']);
-    Route::delete('/posts/{post}', [PostController::class, 'destroy']);
+Route::group(['prefix' => 'v1', 'controller' => '\App\Http\Controllers\Api\V1\PostController'], function () {
+    Route::get('/posts', 'index');
+    Route::get('/posts/{post}', 'show');
+    Route::post('/posts', 'store');
+    Route::patch('/posts/{post}', 'update');
+    Route::delete('/posts/{post}', 'destroy');
+});
+
+Route::prefix('v2')->group(function () {
+    Route::apiResource('posts', V2PostController::class);
 });

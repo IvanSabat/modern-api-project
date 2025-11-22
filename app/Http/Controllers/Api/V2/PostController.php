@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1;
+namespace App\Http\Controllers\Api\V2;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\V1\StorePostRequest;
-use App\Http\Requests\Api\V1\UpdatePostRequest;
-use App\Http\Resources\Api\V1\PostResource;
+use App\Http\Requests\StorePostRequest;
+use App\Http\Resources\Api\V2\PostResource;
 use App\Models\Post;
+use Illuminate\Http\Request;
 
 class PostController extends Controller
 {
@@ -15,7 +15,7 @@ class PostController extends Controller
      */
     public function index()
     {
-        return PostResource::collection(Post::all());
+        return PostResource::collection(Post::with('author')->get());
     }
 
     /**
@@ -23,11 +23,12 @@ class PostController extends Controller
      */
     public function store(StorePostRequest $request)
     {
-        $post = Post::query()->create($request->validated());
+        $data = $request->validated();
+        $data['author_id'] = 1;
 
-        return new PostResource($post)
-            ->response()
-            ->setStatusCode(201);
+        $post = Post::query()->create($data);
+
+        return new PostResource($post);
     }
 
     /**
@@ -35,15 +36,22 @@ class PostController extends Controller
      */
     public function show(Post $post)
     {
+//        $post = Post::query()->findOrFail($id);
+
         return new PostResource($post);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdatePostRequest $request, Post $post)
+    public function update(Request $request, Post $post)
     {
-        $post->update($request->validated());
+        $data = $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'body'  => ['required', 'string'],
+        ]);
+
+        $post->update($data);
 
         return new PostResource($post);
     }
