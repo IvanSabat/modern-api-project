@@ -7,6 +7,7 @@ use App\Http\Requests\StorePostRequest;
 use App\Http\Resources\Api\V2\PostResource;
 use App\Models\Post;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class PostController extends Controller
 {
@@ -15,7 +16,11 @@ class PostController extends Controller
      */
     public function index()
     {
-        return PostResource::collection(Post::with('author')->get());
+//        $posts = Post::with('author')->get(); // all posts
+//        $posts = Auth::user()->posts()->with('author')->latest()->paginate(); // posts only from the auth user
+        $posts = Auth::user()->posts()->paginate();
+
+        return PostResource::collection($posts);
     }
 
     /**
@@ -24,7 +29,7 @@ class PostController extends Controller
     public function store(StorePostRequest $request)
     {
         $data = $request->validated();
-        $data['author_id'] = 1;
+        $data['author_id'] = $request->user()->id;
 
         $post = Post::query()->create($data);
 
@@ -37,6 +42,7 @@ class PostController extends Controller
     public function show(Post $post)
     {
 //        $post = Post::query()->findOrFail($id);
+        abort_if(Auth::id() !== $post->author_id, 403, 'Access denied.');
 
         return new PostResource($post);
     }
@@ -46,6 +52,8 @@ class PostController extends Controller
      */
     public function update(Request $request, Post $post)
     {
+        abort_if(Auth::id() !== $post->author_id, 403, 'Access denied.');
+
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'body'  => ['required', 'string'],
@@ -61,6 +69,8 @@ class PostController extends Controller
      */
     public function destroy(Post $post)
     {
+        abort_if(Auth::id() !== $post->author_id, 403, 'Access denied.');
+
         $post->delete();
 
         return response()->noContent();
